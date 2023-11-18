@@ -5,6 +5,7 @@ import (
 	"data-miner/db"
 	"data-miner/menu"
 	"data-miner/schedule"
+	"data-miner/settings"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -47,6 +48,7 @@ func main() {
 					msg.Text = "Hello again"
 				}
 			case "settings":
+				msg = settings.MainSettingsMessage(update.Message.From.ID)
 				msg.Text = "Settings"
 			default:
 				continue
