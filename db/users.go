@@ -2,15 +2,14 @@ package db
 
 import (
 	"context"
-	"words-bot/types"
+	"data-miner/types"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func CreateNewUserOrCheckExist(fromUser *tgbotapi.User) (bool, error) {
-	collection, _ := GetCollection("users")
+	collection := GetCollection("users")
 	filter := bson.M{"tg_id": fromUser.ID}
 	var existingUser types.User
 
@@ -20,9 +19,8 @@ func CreateNewUserOrCheckExist(fromUser *tgbotapi.User) (bool, error) {
 	}
 
 	user := types.User{
-		TgID:  fromUser.ID,
-		Name:  fromUser.FirstName + " " + fromUser.LastName,
-		Words: make([]primitive.ObjectID, 0),
+		TgID: fromUser.ID,
+		Name: fromUser.FirstName + " " + fromUser.LastName,
 	}
 	// Insert user document into MongoDB
 	_, err = collection.InsertOne(context.TODO(), user)
@@ -34,7 +32,7 @@ func CreateNewUserOrCheckExist(fromUser *tgbotapi.User) (bool, error) {
 }
 
 func GetMe(userId int64) (types.User, error) {
-	collection, _ := db.GetCollection("users")
+	collection := GetCollection("users")
 	filter := bson.M{"tg_id": userId}
 	var user types.User
 

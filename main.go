@@ -1,10 +1,10 @@
 package main
 
 import (
+	"data-miner/bot"
+	"data-miner/db"
+	"data-miner/schedule"
 	"log"
-	"words-bot/bot"
-	"words-bot/db"
-	"words-bot/schedule"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -30,6 +30,23 @@ func main() {
 			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 		}
 		msg := tgbotapi.NewMessage(update.Message.From.ID, "test")
+
+		if update.Message.IsCommand() {
+			switch update.Message.Command() {
+			case "start":
+				ok, err := db.CreateNewUserOrCheckExist(update.Message.From)
+				if err != nil {
+					// handle db err
+				}
+				if ok {
+					msg.Text = "Hello"
+				} else {
+					msg.Text = "Hello again"
+				}
+			default:
+				continue
+			}
+		}
 
 		tgbot.Send(msg)
 	}

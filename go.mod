@@ -1,4 +1,4 @@
-module words-bot
+module data-miner
 
 go 1.21.1
 

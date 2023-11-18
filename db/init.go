@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
+	"data-miner/utils"
 	"log"
-	"words-bot/utils"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -27,10 +27,10 @@ func GetClientOptions() *options.ClientOptions {
 	return clientOptions
 }
 
-func GetCollection(collection string) (*mongo.Collection, error) {
+func GetCollection(collection string) *mongo.Collection {
 	client := GetMongoClient()
 
-	return client.Database("words").Collection(collection), nil
+	return client.Database("Cluster0").Collection(collection)
 }
 
 func InitDb() {

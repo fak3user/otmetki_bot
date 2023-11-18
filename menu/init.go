@@ -1,7 +1,7 @@
 package menu
 
 import (
-	"words-bot/bot"
+	"data-miner/bot"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

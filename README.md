@@ -1,4 +1,4 @@
-# words-bot
+# data-miner
 
 -   [x] google translate voice api -> mimic3
 -   [x] chat gpt api
