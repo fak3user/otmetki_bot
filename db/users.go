@@ -9,7 +9,7 @@ import (
 )
 
 func CreateNewUserOrCheckExist(fromUser *tgbotapi.User) (bool, error) {
-	collection := GetCollection("users")
+	collection := GetCollection("app", "users")
 	filter := bson.M{"tg_id": fromUser.ID}
 	var existingUser types.User
 
@@ -32,7 +32,7 @@ func CreateNewUserOrCheckExist(fromUser *tgbotapi.User) (bool, error) {
 }
 
 func GetMe(userId int64) (types.User, error) {
-	collection := GetCollection("users")
+	collection := GetCollection("app", "users")
 	filter := bson.M{"tg_id": userId}
 	var user types.User
 

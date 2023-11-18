@@ -11,10 +11,6 @@ func InitMenu() {
 
 	cfg := tgbotapi.NewSetMyCommands(
 		tgbotapi.BotCommand{
-			Command:     "/quiz",
-			Description: "Start quiz",
-		},
-		tgbotapi.BotCommand{
 			Command:     "/settings",
 			Description: "Settings",
 		},

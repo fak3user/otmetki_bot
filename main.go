@@ -3,6 +3,7 @@ package main
 import (
 	"data-miner/bot"
 	"data-miner/db"
+	"data-miner/menu"
 	"data-miner/schedule"
 	"log"
 
@@ -22,6 +23,8 @@ func main() {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
+
+	menu.InitMenu()
 
 	updates := tgbot.GetUpdatesChan(u)
 
@@ -43,6 +46,8 @@ func main() {
 				} else {
 					msg.Text = "Hello again"
 				}
+			case "settings":
+				msg.Text = "Settings"
 			default:
 				continue
 			}
