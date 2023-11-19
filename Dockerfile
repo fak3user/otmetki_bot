@@ -2,8 +2,8 @@ FROM okteto/golang:1.21 AS builder
 
 RUN go version
 
-COPY ./ /whataword
-WORKDIR /whataword
+COPY ./ /otmetki
+WORKDIR /otmetki
 
 RUN go mod download && go get -u ./...
 RUN CGO_ENABLED=0 go build -o ./app
@@ -14,10 +14,7 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-COPY --from=builder /whataword/app .
-COPY --from=builder /whataword/fonts/font.ttf fonts/font.ttf
-
-RUN mkdir pic
+COPY --from=builder /otmetki/app .
 
 EXPOSE 8080
 
