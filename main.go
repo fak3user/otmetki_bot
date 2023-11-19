@@ -4,10 +4,15 @@ import (
 	"data-miner/bot"
 	"data-miner/db"
 	"data-miner/menu"
+	"data-miner/messages"
 	"data-miner/settings"
+	"data-miner/types"
+	"fmt"
 	"log"
 	"strings"
+	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -40,11 +45,70 @@ func main() {
 			callbackData := strings.Split(update.CallbackQuery.Data, ",")
 
 			switch callbackData[0] {
+			case "record":
+				if len(callbackData) == 2 {
+					insertedRecord, err := db.AddRecord(callbackData[1])
+					if err != nil {
+						// handle error
+					}
+
+					updatedMessage := settings.UpdaterRecord(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, callbackData[1], insertedRecord.Hex())
+					_, err = tgbot.Request(updatedMessage)
+					spew.Dump(err)
+				} else if len(callbackData) == 5 {
+					switch callbackData[3] {
+					case "rate":
+						err := db.UpdateRecord(callbackData[1], callbackData[2], types.Record{
+							Rate: callbackData[4],
+						})
+						if err != nil {
+							spew.Dump(err)
+						}
+					case "note":
+						bot.AddNewNoteCreator(update.CallbackQuery.From.ID, callbackData[1], callbackData[2])
+						updatedMessage := settings.UpdaterEnterRecordNote(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
+						tgbot.Request(updatedMessage)
+					default:
+						continue
+					}
+				}
 			case "exit":
 				deleteMessageRequest := tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 				tgbot.Request(deleteMessageRequest)
-			case "data":
+				SendDefaultRecordMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.From.ID, tgbot)
 
+				bot.RemoveNewLakeCreator(update.CallbackQuery.From.ID)
+				bot.RemoveNewNoteCreator(update.CallbackQuery.From.ID)
+			case "data":
+				if len(callbackData) == 2 {
+					switch callbackData[1] {
+					case "back":
+						updatedMessage := settings.UpdaterMainSettings(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
+						tgbot.Request(updatedMessage)
+					case "add":
+						bot.AddNewLakeCreator(update.CallbackQuery.From.ID)
+						if len(callbackData) == 3 {
+							bot.RemoveNewLakeCreator(update.CallbackQuery.From.ID)
+							switch callbackData[2] {
+							case "back":
+								updatedMessage := settings.UpdaterDataSettignsMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, update.CallbackQuery.From.ID)
+								tgbot.Request(updatedMessage)
+							default:
+								continue
+							}
+						} else {
+
+						}
+
+						updatedMessage := settings.UpdaterEnterNewLakeTitle(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
+						tgbot.Request(updatedMessage)
+					default:
+						continue
+					}
+				} else {
+					updatedMessage := settings.UpdaterDataSettignsMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, update.CallbackQuery.From.ID)
+					tgbot.Request(updatedMessage)
+				}
 			default:
 				continue
 			}
@@ -63,7 +127,8 @@ func main() {
 					msg.Text = "Hello again"
 				}
 			case "settings":
-				msg = settings.MainSettingsMessage(update.Message.From.ID)
+				DeletePrevMessage(update)
+				msg = settings.MessageMainSettings(update.Message.From.ID)
 				msg.Text = "Settings"
 			default:
 				continue
@@ -71,11 +136,59 @@ func main() {
 			tgbot.Send(msg)
 			DeleteCurrentMessage(update)
 		} else {
+			if bot.CheckNewLakeCreator(update.Message.From.ID) {
+				fmt.Println("from lake: ")
+				DeletePrevMessage(update)
+				bot.RemoveNewLakeCreator(update.Message.From.ID)
+				lakeId, _ := db.AddLake(update.Message.Text, update.Message.From.ID)
+				db.AddLakeToUser(update.Message.From.ID, lakeId)
+
+				msg := tgbotapi.NewMessage(update.Message.From.ID, "✅")
+				sendedMessage, _ := tgbot.Send(msg)
+
+				go func() {
+					time.Sleep(1 * time.Second)
+					deleteMessageRequest := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, sendedMessage.MessageID)
+					tgbot.Request(deleteMessageRequest)
+
+					SendDefaultRecordMessage(update.Message.Chat.ID, update.Message.From.ID, tgbot)
+				}()
+			}
+			if record := bot.CheckNewNoteCreator(update.Message.From.ID); record.UserId != 0 {
+				spew.Dump(record)
+				fmt.Println("from note: ")
+
+				DeletePrevMessage(update)
+				bot.RemoveNewNoteCreator(update.Message.From.ID)
+				err := db.UpdateRecord(record.LakeId, record.RecordId, types.Record{
+					Note: update.Message.Text,
+				})
+
+				if err != nil {
+					spew.Dump(err)
+				}
+
+				msg := tgbotapi.NewMessage(update.Message.From.ID, "✅")
+				sendedMessage, _ := tgbot.Send(msg)
+
+				go func() {
+					time.Sleep(1 * time.Second)
+					deleteMessageRequest := tgbotapi.NewDeleteMessage(update.Message.Chat.ID, sendedMessage.MessageID)
+					tgbot.Request(deleteMessageRequest)
+
+					SendDefaultRecordMessage(update.Message.Chat.ID, update.Message.From.ID, tgbot)
+				}()
+			}
 			DeleteCurrentMessage(update)
 
 		}
 
 	}
+}
+
+func SendDefaultRecordMessage(chatId int64, userId int64, tgbot *tgbotapi.BotAPI) {
+	msg := messages.MessageRecords(chatId, userId)
+	tgbot.Send(msg)
 }
 
 func DeletePrevMessage(update tgbotapi.Update) error {

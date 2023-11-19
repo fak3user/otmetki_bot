@@ -36,7 +36,7 @@ func GetCollection(db string, collection string) *mongo.Collection {
 func InitDb() {
 	clientOptions := GetClientOptions()
 
-	newClient, err := mongo.Connect(context.TODO(), clientOptions)
+	newClient, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	} else {

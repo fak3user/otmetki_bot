@@ -1,24 +1,51 @@
 package db
 
-// func AddRecord(userId int64, minerId ) (bool, error) {
-// 	collection := GetCollection("app", "users")
-// 	filter := bson.M{"tg_id": fromUser.ID}
-// 	var existingUser types.User
+import (
+	"context"
+	"data-miner/types"
+	"fmt"
 
-// 	err := collection.FindOne(context.TODO(), filter).Decode(&existingUser)
-// 	if err == nil {
-// 		return false, nil
-// 	}
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
-// 	user := types.User{
-// 		TgID: fromUser.ID,
-// 		Name: fromUser.FirstName + " " + fromUser.LastName,
-// 	}
-// 	// Insert user document into MongoDB
-// 	_, err = collection.InsertOne(context.TODO(), user)
-// 	if err != nil {
-// 		return false, err
-// 	}
+func AddLake(title string, userId int64) (primitive.ObjectID, error) {
+	collection := GetCollection("app", "lakes")
 
-// 	return true, nil
-// }
+	user, _ := GetMe(userId)
+
+	newLake := types.Lake{
+		UserId: user.ID,
+		Title:  title,
+	}
+
+	insertedResult, err := collection.InsertOne(context.Background(), newLake)
+	if err != nil {
+		return insertedResult.InsertedID.(primitive.ObjectID), err
+	}
+
+	return insertedResult.InsertedID.(primitive.ObjectID), nil
+}
+
+func GetLakes(ids []primitive.ObjectID) ([]types.Lake, error) {
+	var userLakes []types.Lake
+	if len(ids) == 0 {
+		return userLakes, fmt.Errorf("no lakes")
+	}
+
+	collection := GetCollection("app", "lakes")
+
+	filter := bson.M{"_id": bson.M{"$in": ids}}
+
+	cursor, _ := collection.Find(context.Background(), filter)
+
+	for cursor.Next(context.Background()) {
+		var lake types.Lake
+		err := cursor.Decode(&lake)
+		if err != nil {
+			return userLakes, err
+		}
+		userLakes = append(userLakes, lake)
+	}
+	return userLakes, nil
+}
